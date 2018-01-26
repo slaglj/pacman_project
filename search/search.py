@@ -69,25 +69,35 @@ class stateWithPathData:
     A stateWithPathData is a state in a search problem with added data pertaining to
     that state in the context of executing a search problem, specifically:
 
-        prevState: the state from which this state was arrived at
-        action: the action takent to get from prevState to state
+        prevMetaState: the state (with path data) from which this state was arrived at
+        action: the action takent to get from prevMetaState to state
         costToState: the cost of the path taken to reach this state
+
+    Including this class accomplishes two things to help execute the algorithm:
+
+    (1) Allows us to reconstruct the path once the goal state is reached by accesseing prevMetaState,
+        for all search algorithms (we are essentially creating an implicit linked list)
+    (2) Allows us to quickly evaluate the cost of the path up to this state with costToState() for
+        uniform cost search and A* search
     """
 
-    def __init__(self, state, prevState, action, costToState):
+    def __init__(self, state, prevMetaState, action, costToState):
         self.state = state
-        self.prevState = prevState
+        self.prevMetaState = prevMetaState
         self.action = action
         self.costToState = costToState
 
     def getState(self):
-        return state
+        return self.state
 
-    def getPrevState(self):
-        return prevState
+    def getPrevMetaState(self):
+        return self.prevMetaState
+
+    def getAction(self):
+        return self.action 
 
     def getCostToState(self):
-        return costToState
+        return self.costToState
 
 
 def tinyMazeSearch(problem):
@@ -102,36 +112,50 @@ def tinyMazeSearch(problem):
 
 
 def graphSearch(problem, fringe):
-    visitedStates = set()
-    currState = problem.getStartState()
-
-    # Dictionary used to reconstruct the solution at the end of the algorithm
-    # If the algorithm arrives at state T from S by taking action A, then backPsointers[T] = (S,A)
-    backPointers = {}
+    """
+    visitedStates = set(problem.getStartState())
+    currMetaState = stateWithPathData(problem.getStartState(), None, None, 0)
 
     # Do Graph search while maintaining backpointers. Note that any given state will only have its
     # back pointer set at most once
-    while(not problem.isGoalState(currState)):
-        for (nextState, action, _) in problem.getSuccessors(currState):
-            if nextState not in visitedStates:
-                fringe.push(nextState)
-                backPointers[nextState] =  (currState, action)
+    while(not problem.isGoalState(currMetaState.getState())):
+        currState = currMetaState.getState()
 
-        visitedStates.add(currState)
+        for (nextState, action, cost) in problem.getSuccessors(currState):
+            if nextState not in visitedStates:
+                fringe.push(stateWithPathData(nextState, currMetaState, action, currMetaState.getCostToState() + cost))
+                visitedStates.add(nextState)
+            
 
         if fringe.isEmpty(): return []
-        currState = fringe.pop()
+        currMetaState = fringe.pop()
     
-    # At this point reconstruct the solution
-    # Tag the start state with a value of None so we know when we're done 
-    # tracing our way back in reconstructing the solution
-    backPointers[problem.getStartState()] = None
+    """
+    visitedStates = set()
+    fringe.push(stateWithPathData(problem.getStartState(), None, None, 0))
+
+    reachedGoal = False
+    # Do Graph search while maintaining backpointers. Note that any given state will only have its
+    # back pointer set at most once
+    while(not reachedGoal):
+        if fringe.isEmpty(): return []
+
+        currMetaState = fringe.pop()
+        currState = currMetaState.getState()
+
+        if problem.isGoalState(currState):
+            reachedGoal = True
+        elif currState not in visitedStates:
+            visitedStates.add(currState)
+            for (nextState, action, cost) in problem.getSuccessors(currState):
+                if nextState not in visitedStates:
+                    fringe.push(stateWithPathData(nextState, currMetaState, action, currMetaState.getCostToState() + cost))
+    
     solution = []
 
-    while(backPointers[currState] != None): 
-        (prevState, action) = backPointers[currState]
-        solution.append(action)
-        currState = prevState
+    while(currMetaState.getPrevMetaState() != None): 
+        solution.append(currMetaState.getAction())
+        currMetaState = currMetaState.getPrevMetaState()
 
     solution.reverse()
     return solution
@@ -152,8 +176,9 @@ def breadthFirstSearch(problem):
 
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+
+    from util import PriorityQueueWithFunction
+    return graphSearch(problem, PriorityQueueWithFunction(lambda item: item.getCostToState()))
 
 def nullHeuristic(state, problem=None):
     """
@@ -164,8 +189,9 @@ def nullHeuristic(state, problem=None):
 
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    
+    from util import PriorityQueueWithFunction
+    return graphSearch(problem, PriorityQueueWithFunction(lambda item: item.getCostToState() + heuristic(item.getState(), problem)))
 
 
 # Abbreviations
