@@ -61,6 +61,34 @@ class SearchProblem:
         """
         util.raiseNotDefined()
 
+class stateWithPathData:
+    """
+    Student added class (Jake Slagle)
+
+    
+    A stateWithPathData is a state in a search problem with added data pertaining to
+    that state in the context of executing a search problem, specifically:
+
+        prevState: the state from which this state was arrived at
+        action: the action takent to get from prevState to state
+        costToState: the cost of the path taken to reach this state
+    """
+
+    def __init__(self, state, prevState, action, costToState):
+        self.state = state
+        self.prevState = prevState
+        self.action = action
+        self.costToState = costToState
+
+    def getState(self):
+        return state
+
+    def getPrevState(self):
+        return prevState
+
+    def getCostToState(self):
+        return costToState
+
 
 def tinyMazeSearch(problem):
     """
@@ -72,40 +100,55 @@ def tinyMazeSearch(problem):
     w = Directions.WEST
     return  [s, s, w, s, w, w, s, w]
 
+
+def graphSearch(problem, fringe):
+    visitedStates = set()
+    currState = problem.getStartState()
+
+    # Dictionary used to reconstruct the solution at the end of the algorithm
+    # If the algorithm arrives at state T from S by taking action A, then backPsointers[T] = (S,A)
+    backPointers = {}
+
+    # Do Graph search while maintaining backpointers. Note that any given state will only have its
+    # back pointer set at most once
+    while(not problem.isGoalState(currState)):
+        for (nextState, action, _) in problem.getSuccessors(currState):
+            if nextState not in visitedStates:
+                fringe.push(nextState)
+                backPointers[nextState] =  (currState, action)
+
+        visitedStates.add(currState)
+
+        if fringe.isEmpty(): return []
+        currState = fringe.pop()
+    
+    # At this point reconstruct the solution
+    # Tag the start state with a value of None so we know when we're done 
+    # tracing our way back in reconstructing the solution
+    backPointers[problem.getStartState()] = None
+    solution = []
+
+    while(backPointers[currState] != None): 
+        (prevState, action) = backPointers[currState]
+        solution.append(action)
+        currState = prevState
+
+    solution.reverse()
+    return solution
+
 def depthFirstSearch(problem):
     """
     Search the deepest nodes in the search tree first.
 
-    Your search algorithm needs to return a list of actions that reaches the
-    goal. Make sure to implement a graph search algorithm.
-
-    To get started, you might want to try some of these simple commands to
-    understand the search problem that is being passed in:
     """
-    print "Start:", problem.getStartState()
-    print "Is the start a goal?", problem.isGoalState(problem.getStartState())
-    print "Start's successors:", problem.getSuccessors(problem.getStartState())
 
-    visitedStates = set()
-    fringe = Stack()
-    currState = problem.getStartState()
-
-    while(not problem.isGoalState(currState)):
-        visitedStates.add(currState)
-        if fringe.isEmpty(): return None
-        
-        for state in problem.getSuccessors(currState):
-            if currState not in visitedStates: fringe.push(state)
-        
-        
-        currState = fringe.pop()
-    
-    util.raiseNotDefined()
+    from util import Stack
+    return graphSearch(problem, Stack())
 
 def breadthFirstSearch(problem):
     """Search the shallowest nodes in the search tree first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    from util import Queue
+    return graphSearch(problem, Queue())
 
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
