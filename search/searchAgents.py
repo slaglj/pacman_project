@@ -472,11 +472,74 @@ def foodHeuristic(state, problem):
     """
     position, foodGrid = state
     foodList = foodGrid.asList()
+    
+    #return max(len(foodList), largestFrameHeuristic(foodList,position), largestPairwiseDistHeuristic(foodList, position))
+    return max(len(foodList), largestFrameHeuristic(foodList,position))
+
+def largestFrameHeuristic(foodList,position):
+    md = util.manhattanDistance
+    if len(foodList) == 0: 
+        return 0
+    """
+    elif numDots <= 2: 
+        dotPairDist = max([[md(dot1,dot2): for dot1 in foodList] for dot2 in foodList])
+        pacDotDist =  min([md(position, dot) for dot in foodList])
+        
+        travelDist = dotPairDist + pacDotDist
+
+        # Note that we could improve this heuristic for the case numDots == 3 by following logic similar to the else case
+        # since it would be tedious and it's a marginal case, we don't
+    """
+
+    travelDist = 0
+
+    # computes dots with greatest and least x and y coordinates
+    top=bot=left=right=foodList[0]
+
+
+    for (x,y) in foodList:
+        if y >= top[1]: top = (x,y)
+        if y <= bot[1]: bot = (x,y)
+        if x <= left[0]: left = (x,y)
+        if x >= right[0]: right = (x,y)
+
+    if top[1] == bot[1]: 
+        travelDist = right[0] - left[0] + min(md(position, right), md(position,left))
+    elif right[0] == left[0]: 
+        travelDist = top[0] - bot[0] + min(md(position, top), md(position, bot))
+    else:
+        # extremities in clockwise order
+        extremities = [top,right,bot,left]
+        length = len(extremities)
+
+        fullCycleDist = sum( [md(extremities[i], extremities[(i+1) % length]) for i in xrange(length)])
+
+        distances = []
+        for i in xrange(length):
+            pacDotDist = md(position,extremities[i])
+            shortcutDistRemoved = max(md(extremities[i], extremities[(i+1) % length]), md(extremities[i], extremities[i-1]))
+            distances.append(pacDotDist + fullCycleDist - shortcutDistRemoved)
+
+        travelDist = min(distances)
+
+    return travelDist
+
+
+
+
+def largestPairwiseDistHeuristic(foodList, position):
     if len(foodList) == 0:
         return 0
     else:
-        maxManDist = max([util.manhattanDistance(position, foodPos) for foodPos in foodList])
-        return max(len(foodList), maxManDist)
+        maxDist = 0
+        for xy1 in foodList:
+            for xy2 in foodList:
+                foodPairDist = util.manhattanDistance(xy1,xy2)
+                pacFoodDist = min(util.manhattanDistance(xy1, position), util.manhattanDistance(xy2, position))
+
+                maxDist = max(maxDist, foodPairDist + pacFoodDist)
+
+        return maxDist
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
