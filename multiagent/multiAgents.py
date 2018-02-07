@@ -74,7 +74,29 @@ class ReflexAgent(Agent):
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
         "*** YOUR CODE HERE ***"
-        return successorGameState.getScore()
+        foodList = currentGameState.getFood().asList()
+
+        negMinDistToFood = 0
+
+        if len(foodList) == 0:
+          negMinDistToFood = 0
+        else:
+          negMinDistToFood = -min([manhattanDistance(newPos, dot) for dot in foodList])
+
+        ghostPanic = 0
+
+        for ghost in newGhostStates:
+          if ghost.scaredTimer == 0 and manhattanDistance(newPos, ghost.getPosition()) <= 2:
+            #if a nonscared ghost is <= 2 moves away
+            ghostPanic = -100
+        
+        # compute the "slack time" that pacman has to get to each scared ghost, i.e. scared time - ghost distance (if positive)
+        # sum up slack times
+        pursueGhosts = 0 if len(newGhostStates) == 0 else sum([ max(0, ghost.scaredTimer - manhattanDistance(newPos, ghost.getPosition())) for ghost in newGhostStates])
+
+
+
+        return negMinDistToFood + ghostPanic + pursueGhosts
 
 def scoreEvaluationFunction(currentGameState):
     """
