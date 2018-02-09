@@ -150,7 +150,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
           gameState.getNumAgents():
             Returns the total number of agents in the game
         """
-        bestAction = gameState.getLegalActions(0)[0]
+        bestAction = None
         val = float('-inf')
 
 
@@ -163,24 +163,29 @@ class MinimaxAgent(MultiAgentSearchAgent):
         return bestAction
 
     def maxValue(self, gameState, depthRemaining):
-      if depthRemaining == 0: 
+      actions = gameState.getLegalActions(0) 
+
+      if depthRemaining == 0 or len(actions) == 0: 
         return self.evaluationFunction(gameState)
 
       val = float('-inf')
+      action = None
 
-      assert len(gameState.getLegalActions(0)) != 0
+      if len(gameState.getLegalActions(0)) == 0:
+        return self.evaluationFunction(gameState)
 
       # 0 in getLegalActions(0) because pacman has index 0
       for action in gameState.getLegalActions(0):
         val = max(val, self.minValue(gameState.generateSuccessor(0, action), depthRemaining, 1))
 
-      assert val != float('-inf')
+      #assert val != float('-inf')
       return val
 
     def minValue(self, gameState, depthRemaining, agentIndex):
       val = float('inf')
 
-      assert len(gameState.getLegalActions(agentIndex)) != 0
+      if len(gameState.getLegalActions(0)) == 0:
+        return self.evaluationFunction(gameState)
 
       if agentIndex == gameState.getNumAgents() - 1:
         # looking at the last adversary (ghost), return to main agent (pacman)
@@ -195,7 +200,6 @@ class MinimaxAgent(MultiAgentSearchAgent):
         for action in gameState.getLegalActions(agentIndex):
           val = min(val, self.minValue(gameState.generateSuccessor(agentIndex,action), depthRemaining, agentIndex + 1))
 
-      assert val != float('inf')
       return val
 
 
