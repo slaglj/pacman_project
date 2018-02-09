@@ -150,36 +150,26 @@ class MinimaxAgent(MultiAgentSearchAgent):
           gameState.getNumAgents():
             Returns the total number of agents in the game
         """
-        bestAction = None
-        val = float('-inf')
+        return self.maxValueActionPair(gameState, self.depth)[1]
 
-
-        for action in gameState.getLegalActions(0):
-          resultingVal = self.minValue(gameState.generateSuccessor(0, action), self.depth, 1)
-          if val < resultingVal:
-            val = resultingVal
-            bestAction = action
-
-        return bestAction
-
-    def maxValue(self, gameState, depthRemaining):
+    def maxValueActionPair(self, gameState, depthRemaining):
       actions = gameState.getLegalActions(0) 
 
       if depthRemaining == 0 or len(actions) == 0: 
-        return self.evaluationFunction(gameState)
+        return (self.evaluationFunction(gameState), None)
 
       val = float('-inf')
-      action = None
-
-      if len(gameState.getLegalActions(0)) == 0:
-        return self.evaluationFunction(gameState)
+      bestAction = None
 
       # 0 in getLegalActions(0) because pacman has index 0
-      for action in gameState.getLegalActions(0):
-        val = max(val, self.minValue(gameState.generateSuccessor(0, action), depthRemaining, 1))
+      for action in actions:
+        newVal = self.minValue(gameState.generateSuccessor(0, action), depthRemaining, 1)
+        if val < newVal:
+          val = newVal
+          bestAction = action
 
       #assert val != float('-inf')
-      return val
+      return (val,bestAction)
 
     def minValue(self, gameState, depthRemaining, agentIndex):
       val = float('inf')
@@ -192,7 +182,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
 
 
         for action in gameState.getLegalActions(agentIndex):
-          val = min(val, self.maxValue(gameState.generateSuccessor(agentIndex, action), depthRemaining - 1))
+          val = min(val, self.maxValueActionPair(gameState.generateSuccessor(agentIndex, action), depthRemaining - 1)[0])
 
       else:
         # more adversaries (ghosts) remain
