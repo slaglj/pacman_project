@@ -171,22 +171,24 @@ class MinimaxAgent(MultiAgentSearchAgent):
       return (val,bestAction)
 
     def minValue(self, gameState, depthRemaining, agentIndex):
-      val = float('inf')
+      actions = gameState.getLegalActions(agentIndex)
 
-      if len(gameState.getLegalActions(0)) == 0:
+      if len(actions) == 0:
         return self.evaluationFunction(gameState)
+
+      val = float('inf')
 
       if agentIndex == gameState.getNumAgents() - 1:
         # looking at the last adversary (ghost), return to max agent (pacman)
 
 
-        for action in gameState.getLegalActions(agentIndex):
+        for action in actions:
           val = min(val, self.maxValueActionPair(gameState.generateSuccessor(agentIndex, action), depthRemaining - 1)[0])
 
       else:
         # more adversaries (ghosts) remain
 
-        for action in gameState.getLegalActions(agentIndex):
+        for action in actions:
           val = min(val, self.minValue(gameState.generateSuccessor(agentIndex,action), depthRemaining, agentIndex + 1))
 
       return val
@@ -225,15 +227,17 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
       return (val,bestAction)
 
     def minValue(self, gameState, depthRemaining, agentIndex, alpha, beta):
-      val = float('inf')
+      actions = gameState.getLegalActions(agentIndex)
 
-      if len(gameState.getLegalActions(0)) == 0:
+      if len(actions) == 0:
         return self.evaluationFunction(gameState)
+
+      val = float('inf')
 
       if agentIndex == gameState.getNumAgents() - 1:
         # looking at the last adversary (ghost), return to max agent (pacman)
 
-        for action in gameState.getLegalActions(agentIndex):
+        for action in actions:
           val = min(val, self.maxValueActionPair(gameState.generateSuccessor(agentIndex, action), depthRemaining - 1, alpha, beta)[0])
           if val < alpha: return val
           beta = min(beta,val)
@@ -241,7 +245,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
       else:
         # more adversaries (ghosts) remain
 
-        for action in gameState.getLegalActions(agentIndex):
+        for action in actions:
           val = min(val, self.minValue(gameState.generateSuccessor(agentIndex,action), depthRemaining, agentIndex + 1, alpha, beta))
           if val < alpha: return val
           beta = min(beta,val)
@@ -260,8 +264,52 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
           All ghosts should be modeled as choosing uniformly at random from their
           legal moves.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return self.maxValueActionPair(gameState, self.depth)[1]
+
+    def maxValueActionPair(self, gameState, depthRemaining):
+      actions = gameState.getLegalActions(0) 
+
+      if depthRemaining == 0 or len(actions) == 0: 
+        return (self.evaluationFunction(gameState), None)
+
+      val = float('-inf')
+      bestAction = None
+
+      # 0 in getLegalActions(0) because pacman has index 0
+      for action in actions:
+        newVal = self.expAdvValue(gameState.generateSuccessor(0, action), depthRemaining, 1)
+        if val < newVal:
+          val = newVal
+          bestAction = action
+
+      return (val,bestAction)
+
+    # Expected value from adversarial move
+    def expAdvValue(self, gameState, depthRemaining, agentIndex):
+      actions = gameState.getLegalActions(agentIndex)
+      numActions = float(len(actions))
+
+      if len(actions) == 0:
+        return self.evaluationFunction(gameState)
+
+      expVal = 0
+
+      if agentIndex == gameState.getNumAgents() - 1:
+        # looking at the last adversary (ghost), return to max agent (pacman)
+
+
+        for action in actions:
+          expVal += self.maxValueActionPair(gameState.generateSuccessor(agentIndex, action), depthRemaining - 1)[0]
+
+      else:
+        # more adversaries (ghosts) remain
+
+        for action in actions:
+          expVal += self.expAdvValue(gameState.generateSuccessor(agentIndex,action), depthRemaining, agentIndex + 1)
+
+      expVal = float(expVal) / float(len(actions))
+
+      return expVal
 
 def betterEvaluationFunction(currentGameState):
     """
