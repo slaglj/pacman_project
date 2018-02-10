@@ -324,15 +324,27 @@ def betterEvaluationFunction(currentGameState):
 
     md = util.manhattanDistance
 
-    ghostPanic = -500 if min([md(pacPos,ghost.getPosition()) for ghost in ghostStates]) <= 3 else 0
+
+    # FEATURE: discount gameState if a nonscared ghost is close
+    ghostPanic = -500 if min(4, [md(pacPos,ghost.getPosition()) for ghost in ghostStates if ghost.scaredTimer <= 0]) <= 3 else 0
+
+    # FEATURE: for every scared ghost, add the "head start" pacman has on the ghost, i.e. scaredTime - distance to ghost
+    pursueGhosts = sum([max(0, ghost.scaredTimer - md(pacPos,ghost.getPosition())) for ghost in ghostStates])
 
     foodList = currentGameState.getFood().asList()
-    # minFoodDist = 0 if len(foodList) == 0 else min([md(pacPos,dot) for dot in foodList])
 
-    #foodFeature = len(foodList) if minFoodDist < 4 else minFoodDist
+    # FEATURE: proximity to food (in aggregate) times 500, i.e. 500 * (sum of distances to food)^-1
+    # use 1000 if no food
+    foodProximity = 1000 if len(foodList) == 0 else 500.0 / sum([md(pacPos, dot) for dot in foodList])
 
+    # FEATURE: score of game
+    score = currentGameState.getScore()
 
-    return ghostPanic - 2**(len(foodList))
+    import random
+
+    # sum features and add a little randomness to help pacman out of ruts
+
+    return score + foodProximity + pursueGhosts + ghostPanic + random.randint(0,1)
 
 # Abbreviation
 better = betterEvaluationFunction
