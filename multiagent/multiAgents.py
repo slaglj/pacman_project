@@ -69,9 +69,9 @@ class ReflexAgent(Agent):
         # Useful information you can extract from a GameState (pacman.py)
         successorGameState = currentGameState.generatePacmanSuccessor(action)
         newPos = successorGameState.getPacmanPosition()
-        newFood = successorGameState.getFood()
+        # newFood = successorGameState.getFood()
         newGhostStates = successorGameState.getGhostStates()
-        newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
+        # newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
         "*** YOUR CODE HERE ***"
         foodList = currentGameState.getFood().asList()
@@ -318,8 +318,21 @@ def betterEvaluationFunction(currentGameState):
 
       DESCRIPTION: <write something here so we know what you did>
     """
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+
+    pacPos = currentGameState.getPacmanPosition()
+    ghostStates = currentGameState.getGhostStates()
+
+    md = util.manhattanDistance
+
+    ghostPanic = -500 if min([md(pacPos,ghost.getPosition()) for ghost in ghostStates]) <= 3 else 0
+
+    foodList = currentGameState.getFood().asList()
+    # minFoodDist = 0 if len(foodList) == 0 else min([md(pacPos,dot) for dot in foodList])
+
+    #foodFeature = len(foodList) if minFoodDist < 4 else minFoodDist
+
+
+    return ghostPanic - 2**(len(foodList))
 
 # Abbreviation
 better = betterEvaluationFunction
