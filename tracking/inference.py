@@ -483,11 +483,35 @@ class JointParticleFilter:
             return
         emissionModels = [busters.getObservationDistribution(dist) for dist in noisyDistances]
 
-        liveGhosts = [ghost for ghost in range(self.numGhosts) if noisyDistances[ghost] != None]
-        
-        from operator import mul
+       
 
-        distribution = []
+        distribution = [1.0] * len(self.particles)
+
+        for ghostIndex in range(self.numGhosts):
+            if noisyDistances[ghostIndex] != None:
+                for i in xrange(len(self.particles)):
+                    weight = emissionModels[ghostIndex][util.manhattanDistance(self.particles[i][ghostIndex],pacmanPosition)]
+                    distribution[i] *= weight
+
+        if sum(distribution) == 0.0:
+            print('reverting to uniform distribution')
+            self.initializeParticles()
+        else:
+            distribution.normalize()
+            self.particles = util.nSample(distribution, self.particles, self.numParticles)
+
+        for ghostIndex in range(self.numGhosts):
+            if noisyDistances[ghostIndex] == None:
+                print('putting ghost %d in jail' % ghostIndex)
+                for i in xrange(len(self.particles)):
+                    self.particles[i] = self.getParticleWithGhostInJail(self.particles[i], ghostIndex)
+
+
+
+        """
+        #liveGhosts = [ghost for ghost in range(self.numGhosts) if noisyDistances[ghost] != None]
+        
+        #from operator import mul
         for p in self.particles:
             # emmision distribution = ? if noisyDist is none?
             emissionProbs = [emissionModels[ghost][util.manhattanDistance(p[ghost],pacmanPosition)] for ghost in liveGhosts]
@@ -501,6 +525,7 @@ class JointParticleFilter:
         for ghost in range(self.numGhosts):
             if noisyDistances[ghost] == None:
                 self.particles = [self.getParticleWithGhostInJail(p,ghost) for p in self.particles]
+        """
 
 
     def getParticleWithGhostInJail(self, particle, ghostIndex):
@@ -561,9 +586,13 @@ class JointParticleFilter:
             newParticle = list(oldParticle) # A list of ghost positions
             # now loop through and update each entry in newParticle...
 
-            "*** YOUR CODE HERE ***"
+            for i in range(self.numGhosts):
+                newPosDist = getPositionDistributionForGhost(
+                    setGhostPositions(gameState, oldParticle), i, self.ghostAgents[i]
+                )
 
-            "*** END YOUR CODE HERE ***"
+                newParticle[i] = util.sample(newPosDist)
+
             newParticles.append(tuple(newParticle))
         self.particles = newParticles
 
