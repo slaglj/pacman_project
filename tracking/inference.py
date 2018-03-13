@@ -494,15 +494,12 @@ class JointParticleFilter:
                     distribution[i] *= weight
 
         if sum(distribution) == 0.0:
-            print('reverting to uniform distribution')
             self.initializeParticles()
         else:
-            distribution.normalize()
             self.particles = util.nSample(distribution, self.particles, self.numParticles)
 
         for ghostIndex in range(self.numGhosts):
             if noisyDistances[ghostIndex] == None:
-                print('putting ghost %d in jail' % ghostIndex)
                 for i in xrange(len(self.particles)):
                     self.particles[i] = self.getParticleWithGhostInJail(self.particles[i], ghostIndex)
 
